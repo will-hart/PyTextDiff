@@ -384,20 +384,3 @@ elapsed
 
 '''
 
-
-
-sd = PyFreeDiff()
-t1 = "This is a sample. Text of awesomeness. Can I patch it?"
-t2 = "This is a sample.  Text of awesomeness.  Can I change it? Should I play it?  Can I patch it?"
-diffs = sd.diff(t1, t2)
-t3 = sd.apply_patch(t1, diffs)
-print t2
-print t3
-print t2 == t3
-
-t4 = sd.remove_patch(t3, diffs)
-print t4
-print t1
-print t4 == t1
-
-
