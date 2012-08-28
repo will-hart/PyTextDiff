@@ -23,7 +23,7 @@ Roadmap
 Currently in development:
  - Word level diff
  - Three way merge
-
+ - Generation of unified diff/patch format diffs
 
 Usage
 =====
