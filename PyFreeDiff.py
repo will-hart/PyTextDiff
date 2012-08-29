@@ -68,9 +68,6 @@ A class for performing diff and patch operations on strings
 '''
 class PyFreeDiff(object):
 	
-	def __init__(self):
-		return
-	
 	'''
 	Performs a basic diff on two strings, splitting by sentence and returning
 	the diffs between original and revised
@@ -166,11 +163,9 @@ class PyFreeDiff(object):
 					space_idx += 1
 				
 				if space_idx != 0:
-					result.append(' ' * space_idx)
+					result.append(check[0:space_idx])
 			
 				check = check[space_idx:]
-			
-			# if treat_trailing_spaces_as_sentence is true we parse until we find a non-space character
 			
 		return result
 
@@ -229,10 +224,9 @@ class PyFreeDiff(object):
 		new_max = 0
 		max_len = 0
 		
+		# build up the 2d list showing longest common sequence
 		for old_idx, old_val in enumerate(original):
-			
 			for new_idx, new_val in enumerate(revised):
-				
 				if new_val == old_val:
 					# check previous indices and see if they matched
 					if old_idx > 0 and new_idx > 0:
@@ -255,7 +249,7 @@ class PyFreeDiff(object):
 			result += others
 		
 		o = DiffResult(start_idx + new_max, max_len, revised[new_max : new_max + max_len], UNCHANGED)  
-		result.append(o) #TODO - is this unchanged or inserted??
+		result.append(o)
 		
 		others = self._generate_diff(original[old_max + max_len :], revised[new_max + max_len :], old_max + start_idx)
 		if others is not None:
