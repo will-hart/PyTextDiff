@@ -1,10 +1,8 @@
 '''
 A simple diff by breaking into sentences and comparing adjacent sentences.
-Available under the ultra permissive MIT license
+Based on Python Difflib and available under the ultra permissive MIT license
 
-Version 0.2 - 29-08-2012
-		- performance updates including hashing of strings before diffing
-		- implementation of patching and removal of patches
+
 Version 0.1 - 28-08-2012
 		- initial release, splitting of sentences and diff object/html diff generation
 
@@ -31,6 +29,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
 import re
+import difflib
 
 '''
 Constants for determining the status of a diff_result
@@ -66,42 +65,38 @@ class DiffResult():
 '''
 A class for performing diff and patch operations on strings
 '''
-class PyFreeDiff(object):
-	
+class DiffEngine(object):
+
 	'''
 	Performs a basic diff on two strings, splitting by sentence and returning
 	the diffs between original and revised
 	'''
 	def diff(self, original, revised):
-		hashTable = {}
-		hashed_original = []
-		hashed_revised = []
-		unhashed_diffs = []
-		counter = 0
+		results = []
 		
-		# build a hash map for each string
+		# build a list of sentences for each input string
 		original_arr = self._split_with_maintain(original)
 		new_arr = self._split_with_maintain(revised)
 		
-		counter, hashTable, hashed_original = self._build_hash(counter, hashTable, original_arr)
-		counter, hashTable, hashed_revised = self._build_hash(counter, hashTable, new_arr)
+		# diff the result
+		raw_diffs = list(difflib.ndiff(original_arr, new_arr))
 		
-		# generate diffs
-		hashed_diffs = self._generate_diff(hashed_original, hashed_revised, 0)
+		# convert to diff format
+		for i,d in enumerate(raw_diffs):
+			if d[0] == '-':
+				op = DELETED
+			elif d[0] == '+':
+				op = INSERTED
+			else:
+				op = UNCHANGED
+			results.append(DiffResult(i, 1, d[2:], op))
 		
-		# unmap diff hashes - at this point lines are lists of hashTable numbers
-		reverseHashTable = dict([(v,k) for (k,v) in hashTable.items()])
-		
-		for d in hashed_diffs:
-			line = self._unhash(d.line, reverseHashTable)
-			unhashed_diffs.append(DiffResult(d.start_index, d.length, line, d.operation))
-		
-		return unhashed_diffs
+		return results
 		
 	'''
 	Generates a 3 way diff between three related documents, allowing rebasing of 'mine'
 	based on changes from 'theirs'
-	'''
+	
 	def diff3(self, mine, original, theirs):
 		hashTable = {}
 		hashed_mine = []
@@ -125,7 +120,7 @@ class PyFreeDiff(object):
 		# now compare their updates to mine and see if there are any overlaps
 		
 		pass
-
+		'''
 
 	'''
 	Splits a string based on a list of chars and returns the list.
@@ -143,14 +138,15 @@ class PyFreeDiff(object):
 		
 		# traverse the string
 		while len(check) > 0:
-			found  = rx.search(check)
+			found  = rx.search(str(check))
 			if found == None:
 				result.append(check)
 				break
 			
-			idx = found.start() + 1
-			result.append(check[:idx])
-			check = check[idx:]
+			idx = found.start()
+			result.append(str(check[:idx]))			# append the string
+			result.append(str(check[idx:idx+1]))	# append the puncutation so changing ? to . doesn't invalidate the whole sentence
+			check = check[idx + 1:]
 			
 			# group the trailing spaces if requested
 			if treat_trailing_spaces_as_sentence:
@@ -169,93 +165,6 @@ class PyFreeDiff(object):
 			
 		return result
 
-
-	'''
-	Builds a hash map from a given set of items, appending to anything already in existing
-	
-	Returns the hashmap and the translated hash items
-	'''
-	def _build_hash(self, start_counter, existing, items):
-		translated_hash = []
-		for s in items:
-			if s not in existing:
-				existing[s] = start_counter
-				idx = start_counter
-				start_counter += 1
-			else:
-				idx = existing[s]
-			translated_hash.append(idx)
-
-		return start_counter, existing, translated_hash
-
-
-	'''
-	Takes a list of diffs and a hashtable and converts the diffs back into strings
-	'''
-	def _unhash(self, diffs, hashtable):
-		return ''.join(hashtable[i] for i in diffs)
-
-
-	'''
-	Generate a 'dumb' diff between two strings.
-	'''
-	def _generate_diff(self, original, revised, start_idx):
-				
-		# check if we have empty lists - means we are at the bottom of recursion
-		if len(original) == 0 and len(revised) == 0:
-			return None
-		
-		# check if the strings are the same
-		if original == revised: #",".join( map( str, original ) ) == ",".join( map( str, revised ) ):
-			return [DiffResult(start_idx, len(revised), revised, UNCHANGED)]
-		
-		# speed up - check for original being empty (complete insertion)
-		if len(original) == 0:
-			return [DiffResult(start_idx, len(revised), revised, INSERTED)]
-		
-		# speed up - check for revised being empty (complete deletion)
-		if len(revised) == 0:
-			return [DiffResult(start_idx, len(original), original, DELETED)]
-		
-		# set up some variables
-		result = []
-		matrix = [[0 for x in range(len(revised))] for x in range(len(original))] 
-		old_max = 0
-		new_max = 0
-		max_len = 0
-		
-		# build up the 2d list showing longest common sequence
-		for old_idx, old_val in enumerate(original):
-			for new_idx, new_val in enumerate(revised):
-				if new_val == old_val:
-					# check previous indices and see if they matched
-					if old_idx > 0 and new_idx > 0:
-						matrix[old_idx][new_idx] = matrix[old_idx-1][new_idx-1] + 1
-					else:
-						matrix[old_idx][new_idx] = 1
-					
-					if matrix[old_idx][new_idx] > max_len:
-						max_len = matrix[old_idx][new_idx]
-						old_max = old_idx + 1 - max_len
-						new_max = new_idx + 1 - max_len
-		
-		if max_len == 0:
-			result.append(DiffResult(start_idx, len(original), original, DELETED))
-			result.append(DiffResult(start_idx, len(revised), revised, INSERTED))
-			return result
-
-		others = self._generate_diff(original[0:old_max], revised[0:new_max], start_idx)
-		if others is not None:
-			result += others
-		
-		o = DiffResult(start_idx + new_max, max_len, revised[new_max : new_max + max_len], UNCHANGED)  
-		result.append(o)
-		
-		others = self._generate_diff(original[old_max + max_len :], revised[new_max + max_len :], old_max + start_idx)
-		if others is not None:
-			result += others
-	
-		return result
 
 		
 	'''
@@ -316,7 +225,7 @@ class PyFreeDiff(object):
 	'''
 	Reverse the direction of a patch
 	'''
-	def reverse_patch(self, diff):
+	def switch_patch_direction(self, diff):
 		result = []
 		for d in diff:
 			if d.operation == INSERTED:
@@ -335,46 +244,6 @@ class PyFreeDiff(object):
 	Convenience method for removing a patch
 	'''
 	def remove_patch(self, doc, diffs):
-		patches = self.reverse_patch(diffs)
+		patches = self.switch_patch_direction(diffs)
 		return self.apply_patch(doc, patches)
-
-
-'''
-Run some basic tests on the class
-
-from SimpleDiff import SimpleDiff
-sd = SimpleDiff()
-test1 = "a.b.c.d"
-test2 = "a.g.c.d"
-d = sd.diff(test1, test2)
-h = sd.generate_html_diffs(d)
-print h
-
-
-'''
-
-'''
-run some speed tests - 1,000,000 took 135 seconds
-
-
-from writer.libs.PyFreeDiff import PyFreeDiff
-import time
-
-t1 = "This is a simple text. Lorem Ipsum etc. I want to iterate 10,000 times and count elapsed.  Some more matched text.  Some other unmatched text.  Finally some joy"
-t2 = "This is a simple text. Lorem Ipsum etc. Some more matched text.  Some other changed text.  Finally some joy! There could be some more?  What do you think!? I don't know.  Its weird This thing that have with the guy in the lemon popsicle."
-
-def multi_test():
-    start = time.time()
-    for i in range(1000000):
-        sd = PyFreeDiff()
-        d = sd.diff(t1,t2)
-        h = sd.generate_html_diffs(d)
-    end = time.time() - start
-    return end, d, h
-
-elapsed,last_diff,last_html = multi_test()
-
-elapsed
-
-'''
 
