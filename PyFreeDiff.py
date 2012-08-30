@@ -108,7 +108,7 @@ class DiffEngine(object):
     '''
     Builds up a PyFreeDiff diff result set for a given n_diff
     '''
-    def build_diffs_from_string(self, diffs):
+    def diffs_from_string(self, diffs):
         if type(diffs) == list:
             lines = diffs
         else:
