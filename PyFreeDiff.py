@@ -37,6 +37,7 @@ Constants for determining the status of a diff_result
 DELETED = -1
 UNCHANGED = 0
 INSERTED = 1
+CONFLICT = 99
 NOT_SET = -99
 
 
@@ -96,31 +97,21 @@ class DiffEngine(object):
 	'''
 	Generates a 3 way diff between three related documents, allowing rebasing of 'mine'
 	based on changes from 'theirs'
-	
+	'''
 	def diff3(self, mine, original, theirs):
-		hashTable = {}
-		hashed_mine = []
-		hashed_original = []
-		hashed_theirs = []
-		counter = 0
-
+		result = []
+	
 		# build a hash map for each string
 		mine_arr = self._split_with_maintain(mine)
 		original_arr = self._split_with_maintain(original)
 		their_arr = self._split_with_maintain(theirs)
-
-		counter, hashTable, hashed_mine = self._build_hash(counter, hashTable, mine_arr)
-		counter, hashTable, hashed_original = self._build_hash(counter, hashTable, original_arr)
-		counter, hashTable, hashed_theirs = self._build_hash(counter, hashTable, their_arr)
-
+		
 		# get patches between theirs and original
 		their_updates = self.diff(hashed_original, hashed_theirs)
 		your_updates = self.diff(hashed_original, hashed_mine)
 		
-		# now compare their updates to mine and see if there are any overlaps
-		
+		# now we need to check if there are overlapping diffs
 		pass
-		'''
 
 	'''
 	Splits a string based on a list of chars and returns the list.
