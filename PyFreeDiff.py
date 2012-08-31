@@ -127,13 +127,13 @@ class DiffEngine(object):
         conflicts = []
     
         # build a hash map for each string
-        mine_arr = self._split_with_maintain(mine)
+        my_arr = self._split_with_maintain(mine)
         original_arr = self._split_with_maintain(original)
         their_arr = self._split_with_maintain(theirs)
         
         # get patches between theirs and original
-        their_updates = self.diff(hashed_original, hashed_theirs)
-        my_updates = self.diff(hashed_original, hashed_mine)
+        their_updates = difflib.ndiff(hashed_original, their_arr)
+        my_updates = difflib.ndiff(hashed_original, my_arr)
         
         # check if we got empty diffs in either
         if their_updates == []:
@@ -142,13 +142,27 @@ class DiffEngine(object):
             return their_updates
         
         # now we need to check if there are overlapping diffs
-        index_theirs = their_updates[0].start_index
-        index_mine = my_updates[0].start_index
+        their_index = 0
+        my_index = 0
+        max_their = len(their_updates)
+        max_mine = len(my_updates)
+        max_index = max(max_their, max_mine)
         
-        i = 0
-        max_idx = len(original_arr)
-        while i < max_idx:
-            break
+        for idx in range(max_index):
+            op_mine = my_updates[my_index][:2]
+            op_theirs = my_updates[their_index][:2]
+            
+            # if only one has changed, no conflict
+            if op_mine != '  ' and op_theirs != '  ':
+                
+                # a conflict has occurred
+                
+            
+            # increment indices
+            
+            
+        
+            
         
         pass
         #return result
