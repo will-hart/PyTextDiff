@@ -44,7 +44,7 @@ NOT_SET = -99
 '''
 Constant for a standard sentence split
 '''
-STANDARD_REGEX = '[.!?]'
+STANDARD_REGEX = '[,.!?]'
 
 
 '''
@@ -153,17 +153,12 @@ class DiffEngine(object):
             op_theirs = my_updates[their_index][:2]
             
             # if only one has changed, no conflict
-            if op_mine != '  ' and op_theirs != '  ':
+            #if op_mine != '  ' and op_theirs != '  ':
                 
-                # a conflict has occurred
-                
+                # a conflict has occurred 
             
             # increment indices
-            
-            
-        
-            
-        
+
         pass
         #return result
 
@@ -180,6 +175,10 @@ class DiffEngine(object):
         result = ""
         
         for diff in diffs:
+        
+            if len(diff) == 0:
+                continue
+            
             op = diff.operation
             if op == INSERTED:
                 start = "<ins>"
@@ -307,6 +306,10 @@ class DiffEngine(object):
     '''
     def _pack_results(self, raw_diffs):
         results = []
+        
+        # check for no diffs
+        if len(raw_diffs) == 0:
+            return results
         
         index = 0
         # convert to DiffResult format
