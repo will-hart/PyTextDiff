@@ -373,7 +373,6 @@ class DiffEngine(object):
     Generate a 'dumb' diff between two strings.
     '''
     def _generate_diff(self, original, revised, start_idx):
-        print start_idx
         # check if we have empty lists - means we are at the bottom of recursion
         if len(original) == 0 and len(revised) == 0:
             return None
@@ -413,9 +412,6 @@ class DiffEngine(object):
                         new_max = new_idx + 1 - max_len
         
         if max_len == 0:
-            print "no match"
-            print ','.join(original) + " @@" + str(len(original))
-            print ','.join(revised) + " @@" + str(len(revised))
             result.append(DiffResult(start_idx, len(original), original, DELETED))
             result.append(DiffResult(start_idx, len(revised), revised, INSERTED))
             return result
