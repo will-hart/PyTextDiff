@@ -73,7 +73,8 @@ class DiffResult():
         self.operation = operation
     
     def __str__(self):
-        return str(self.operation) + "@" + str(self.start_index) + "-" + str(self.start_index + self.length) + ": " + self.line
+        return str(self.operation) + "{number:03}".format(number=self.start_index) + \
+        "@" + "{number:03}".format(self.start_index + self.length) + ":" + self.line
 
 
 '''
@@ -277,28 +278,40 @@ class DiffEngine(object):
     The main operation here is to remove empty lines
     '''
     def _pack_results(self, raw_diffs):
-        raw_list = raw_diffs.split('\n')
-        results = []
-        index = 0
-        last_op = ''
-        last_op_idx = 0
-        current_str = ''
+        if raw_diffs == None or len(raw_diffs) == 0:
+            return None
         
-        for r in raw_list:
-            if r[0] == last_op or last_op_idx == -1:
-                current_str += r[2:]
-            else:
-                if last_op != ' ': # ignore no change lines to compress results
-                    results.append(last_op + "{number:03}".format(number=last_op_idx) + "@" + \
-                            "{number:03}".format(number=index-last_op_idx) + ":" + current_str)
-                    current_str = r[2:]
-                else: 
-                    current_str = None
-                last_op = r[0]
-                last_op_idx = index
+        results = ''
+        raw_list = raw_diffs.split('\n')
+        prev_op = raw_list[0][0]
+        count = 0
+        start = 0
+        length = 0
+        current = ''
+        
+        for raw in raw_list:
+            if raw[0] != prev_op:
+                if length > 0:
+                    results +=  prev_op + "{number:03}".format(number=count) + "@" +\
+                                "{number:03}".format(number=length) + ":" + current + "\n"
+                    current = ''
+                    length = 0
             
-            index += 1
-        return '\n'.join(results)
+            # save the operation
+            prev_op = raw[0]
+        
+            # increment counters
+            if prev_op != "+":
+                count += 1
+            if prev_op != " ":
+                current += raw[2:]
+                length += 1
+            
+        if length > 0:
+            results += prev_op + "{number:03}".format(number=count) + "@" +\
+                        "{number:03}".format(number=length) + ":" + current
+        
+        return results
         
     '''
     Takes a raw diff string and converts it into native DiffResult objects
@@ -322,7 +335,7 @@ class DiffEngine(object):
             text = raw[9:]
             operation = raw[0]
             
-            results.append(DiffResult(start_idx, length, operation, text))
+            results.append(DiffResult(start_idx, length, text, operation))
         
         return results
 

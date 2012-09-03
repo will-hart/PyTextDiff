@@ -54,8 +54,8 @@ class TestDiffUtilities(unittest.TestCase):
 		
 		
 	def test_packing_of_diffs_to_string(self):
-		pack_diff_text = "+ insert\n skip\n- remove\n+ insert 2"
-		expected_result = "+000@001:insert\n-001@001:remove\n+001@001:insert2"
+		pack_diff_text = "+ insert\n skip\n- remove\n+ insert2"
+		expected_result = "+000@001:insert\n-002@001:remove\n+002@001:insert2"
 		result = self.engine._pack_results(pack_diff_text)
 		self.assertEquals(result, expected_result)
 		
