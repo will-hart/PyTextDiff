@@ -22,50 +22,25 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
-import PyFreeDiff
-import time
+import PyTextDiff
+import unittest
 
-class DiffEngineTests(object):
-	t1 = "This is a simple text. Lorem Ipsum etc. I want to iterate 10,000 times and count elapsed.  Some more matched text.  Some other unmatched text.  Finally some joy"
-	t2 = "This is a simple text. Lorem Ipsum etc. Some more matched text.  Some other changed text.  Finally some joy! There could be some more?  What do you think!? I don't know.  Its weird This thing that have with the guy in the lemon popsicle."
+class TestDiffGeneration(unittest.TestCase):
 
+	def setUp(self):
+		self.engine = PyTextDiff.DiffEngine()
+		
+		self.easy_split_text = """This. Is an easy. splitting? function! it should return
+		at least 14 sections when split."""
+		
 	
-	# crudely tests 'n' iterations of the algorith... currently 1,000,000 takes ~270 seconds using
-	def diff_speed_test(self, num_tests):
-		start = time.time()
-		for i in range(num_tests):
-			sd = PyFreeDiff.DiffEngine()
-			d = sd.diff(self.t1, self.t2)
-			h = sd.generate_html_diffs(d)
-			
-		elapsed = time.time() - start
-		print str(num_tests) + " DiffEngine.diff() iterations took " + str(elapsed) + " seconds"
-		return elapsed, d, h
+	def test_split_of_text(self):
+		result = self.engine._split_with_maintain(self.easy_split_text)
+		self.assertEqual(len(result), 14)		# correct number of splits
+		self.assertEqual(result[0], "This")		# correct first split
+		self.assertEqual(result[2], " ")		# correct space split
+		self.assertEqual(result[13], ".")		# correct last split
 
-	# test accuracy on some simple strings above, diffing, patching and removing patches
-	def diff_accuracy_test(self):
-		sd = PyFreeDiff.DiffEngine()
-		
-		print "Generating Diffs"
-		diffs = sd.diff(self.t1, self.t2)
-		for diff in diffs:
-			print "    >  [" + str(diff.operation) + "] " + diff.line
-		
-		print "Applying a patch to:"
-		print "    > " + self.t1
-		new_t2 = sd.apply_patch(self.t1, diffs)
-		print "Generated: "
-		print "    > " + new_t2
-		if self.t2 == new_t2:
-			print "Strings match!"
-		else:
-			print "Strings don't match!"
-		
-		print "Now removing the patch"
-		new_t1 = sd.remove_patch(new_t2, diffs)
-		print "Removing patch obtained: "
-		print "    > " + new_t1
-		if self.t1 == new_t1:
-			print "Strings match!"
-		else:
-			print "Strings don't match!"
+if __name__ == '__main__':
+	unittest.main()	
+	
