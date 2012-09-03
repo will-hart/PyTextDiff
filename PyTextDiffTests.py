@@ -93,6 +93,17 @@ class TestDiffUtilities(unittest.TestCase):
 		self.assertEquals(output, expected_output)
 		
 		
+class TestDiffFormatting(unittest.TestCase):
+	
+	def setUp(self):
+		self.engine = DiffEngine()
+		
+	def test_html_output(self):
+		diff_text = "+000@001:insert\n-001@001:remove\n+001@001:insert2"
+		expected_output = "<ins>insert</ins>\n<del>remove</del>\n<ins>insert2</ins>\n"
+		
+		output = self.engine.diffs_to_html(diff_text)
+		self.assertEquals(output, expected_output)
 		
 	# TODO: Output Tests
 	# TODO: Diff Tests

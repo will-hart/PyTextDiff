@@ -142,7 +142,7 @@ class DiffEngine(object):
     '''
     Generate basic HTML for a diff string generated from DiffEngine.diff() or DiffEngine.diff3()
     '''
-    def diff_to_html(self, diffs):
+    def diffs_to_html(self, diffs):
         if diffs == None:
             return ""
 
@@ -151,10 +151,7 @@ class DiffEngine(object):
         result = ""
         
         for diff in self._unpack_results(diffs):
-        
-            if len(diff) == 0:
-                continue
-            
+                    
             op = diff.operation
             if op == INSERTED:
                 start = "<ins>"
