@@ -42,6 +42,17 @@ class TestDiffUtilities(unittest.TestCase):
 		self.assertEqual(result[13], ".")		# correct last split
 		
 		
+	def test_splitting_of_text_ignoring_trailing_spaces(self):
+		easy_split_text = """This. Is an easy. splitting? function! it should return
+			at least 14 sections when split."""
+			
+		result = self.engine._split_with_maintain(easy_split_text, False)
+		self.assertEqual(len(result), 10)			# correct number of splits
+		self.assertEqual(result[0], "This")			# correct first split
+		self.assertEqual(result[2], " Is an easy")	# correct space split
+		self.assertEqual(result[9], ".")			# correct last split
+		
+		
 	def test_packing_of_diffs_to_string(self):
 		pack_diff_text = "+ insert\n skip\n- remove\n+ insert 2"
 		expected_result = "+000@001:insert\n-001@001:remove\n+001@001:insert2"
@@ -82,6 +93,13 @@ class TestDiffUtilities(unittest.TestCase):
 		self.assertEquals(output, expected_output)
 		
 		
+		
+	# TODO: Output Tests
+	# TODO: Diff Tests
+	# TODO: Diff3 Tests
+	# TODO: Patch Tests
+	
+	
 if __name__ == '__main__':
 	unittest.main()	
 	
