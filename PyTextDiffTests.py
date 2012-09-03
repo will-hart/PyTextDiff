@@ -95,6 +95,8 @@ class TestDiffUtilities(unittest.TestCase):
 		
 class TestDiffFormatting(unittest.TestCase):
 	
+	# TODO: Patch to HTML and test
+	
 	def setUp(self):
 		self.engine = DiffEngine()
 		
@@ -104,9 +106,25 @@ class TestDiffFormatting(unittest.TestCase):
 		
 		output = self.engine.diffs_to_html(diff_text)
 		self.assertEquals(output, expected_output)
+	
+	
+class TestDiffResults(unittest.TestCase):
+	
+	def setUp(self):
+		self.engine = DiffEngine()
 		
-	# TODO: Output Tests
+	def test_basic_diffs_to_string(self):
+		original = "skip. remove. "
+		revised = "insert. skip. insert2!"
+		expected_result = "+000@003:insert. \n+003@002:insert2!\n-003@003:remove. "
+		
+		result = self.engine.diff(original,revised)
+		self.assertEquals(result, expected_result)
+	
 	# TODO: Diff Tests
+
+	
+	
 	# TODO: Diff3 Tests
 	# TODO: Patch Tests
 	

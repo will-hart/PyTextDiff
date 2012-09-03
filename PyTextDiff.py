@@ -98,7 +98,7 @@ class DiffEngine(object):
         new_text = self._split_with_maintain(revised)
         
         # diff the result
-        raw_diffs = list(difflib.ndiff(original_text, new_text))
+        raw_diffs = '\n'.join(difflib.ndiff(original_text, new_text))
         
         # pack the raw_diffs into a string format and return the results
         return self._pack_results(raw_diffs)
@@ -165,7 +165,6 @@ class DiffEngine(object):
             result += start + diff.line + end + "\n"
             
         return result
-
     
     '''
     Apply a set of diffs to an original file to produce a new text file.
@@ -280,7 +279,7 @@ class DiffEngine(object):
         
         results = ''
         raw_list = raw_diffs.split('\n')
-        prev_op = raw_list[0][0]
+        prev_op = ''
         count = 0
         start = 0
         length = 0
@@ -288,8 +287,9 @@ class DiffEngine(object):
         
         for raw in raw_list:
             if raw[0] != prev_op:
+                start = count
                 if length > 0:
-                    results +=  prev_op + "{number:03}".format(number=count) + "@" +\
+                    results +=  prev_op + "{number:03}".format(number=start) + "@" +\
                                 "{number:03}".format(number=length) + ":" + current + "\n"
                     current = ''
                     length = 0
@@ -305,7 +305,7 @@ class DiffEngine(object):
                 length += 1
             
         if length > 0:
-            results += prev_op + "{number:03}".format(number=count) + "@" +\
+            results += prev_op + "{number:03}".format(number=start) + "@" +\
                         "{number:03}".format(number=length) + ":" + current
         
         return results
