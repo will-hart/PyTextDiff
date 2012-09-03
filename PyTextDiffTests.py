@@ -141,8 +141,11 @@ We need to check it parses properly"""
 		output = self.engine.diff(original, revised)
 		self.assertEquals(output, expected_output)
 	
+	def test_basic_noconflict_diff3_to_string(self):
+		output = self.engine.diff3("a.b.c.d","a.b.e.c.d","a.c.h.d")
+		self.assertEqual(output,"")
 	
-	# TODO: Diff3 Tests
+	
 	# TODO: Patch Tests, including patch_to_html, maintenance of newlines during diff/patch
 	
 	

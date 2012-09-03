@@ -72,7 +72,7 @@ class DiffResult():
         self.line = line
         self.operation = operation
     
-    def lines_touched():
+    def lines_touched(self):
         return set(range(self.start_index, self.start_index + self.length))
     
     def contains(self, other_result):
@@ -82,12 +82,11 @@ class DiffResult():
         return self.lines_touched().intersection(other_result.lines_touched())
     
     def split(self, index):
-        # split the DiffResult at the given index, returning the two halves
-        # assumes default diffing behaviour was used
-        splits = self._split_with_maintain(line)
-        
-        a_splits = splits[:index-self.start_index]
-        b_splits = splits[index-self.start_index:]
+        # split the DiffResult at the given index - the index is
+        # in terms of the document index (e.g. if the diff starts at index
+        # 9 and we want to split at the second part, then the index given would be 11)
+        a_splits = self.line[:index-self.start_index]
+        b_splits = self.line[index-self.start_index:]
         
         return DiffResult(self.start_index, index, ''.join(a_splits), self.operation), \
                 DiffResult(self.start_index + index, self.length-index, ''.join(b_splits), self.operation)
@@ -133,12 +132,50 @@ class DiffEngine(object):
         results = []
         
         # get a combined diff object representing the sorted diffs from both parties
-        both_diffs = self._unpack_results(self.diff(original, mine))
-        both_diffs += self._unpack_results(self.diff(original, theirs))
-        sorted(both_diffs, key=attrgetter('start_index'))
+        # each diff result is stored in a tuple, where the first item represents who
+        # owns the diff ('mine' or 'theirs')
+        both_diffs = [['mine',d] for d in self._unpack_results(self.diff(original, mine))]
+        both_diffs += [['theirs',d] for d in self._unpack_results(self.diff(original, theirs))]
+        sorted(both_diffs, key=lambda obj: obj[1].start_index)
         
         # now go through and merge the diffs
-        
+        i = 0
+        while i < len(both_diffs)-1:    #minus one because we don't
+                                        #want to parse the last item
+            current_diff = both_diffs[i][1]
+            next_diff = both_diffs[i+1][1]
+            
+            if current_diff.contains(next_diff):
+                # handle the conflict - first split off the non-conflicting part
+                first_part, second_part = current_diff.split(next_diff.start_index)
+                results.append(first_part)
+                
+                # work out if the second part or the next diff is longer
+                if second_part.length < next_diff.length:
+                    conflict_a = second_part.length
+                    conflict_b, remainder = next_diff.split(second_part.start_index + second_part.length)
+                    remainder = [both_diffs[i+1][0], remainder]
+                else:
+                    conflict_a, remainder = second_part.split(next_diff.start_index + next_diff.length)
+                    conflict_b = next_diff
+                    remainder = [both_diffs[i][0], remainder]
+                    
+                # add the diffs
+                conflict_a.operation = CONFLICT_MINE
+                conflict_b.operation = CONFLICT_THEIRS
+                results.append(conflict_a)
+                results.append(conflict_b)
+                
+                # set the next diff to the remainder
+                both_diffs[i+1] = remainder
+                
+            else:
+                # just add the diff
+                results.append(both_diffs[i][1])
+            
+            
+            i+=1
+            
         
         pass
 
