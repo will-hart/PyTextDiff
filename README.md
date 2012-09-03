@@ -1,11 +1,11 @@
 PyFreeDiff
 ==========
 
-PyFreeDiff is a completely free and open source library built from the ground up to provide efficient *diff*, *patch* and *merge* functionality in python, with a focus on text based comparisons.
+PyTextDiff is a completely free and open source wrapper for Python's difflib that provides efficient  *diff*, *patch* and *merge* functionality.  PyTextDiff is different in that its main focus is on the versioning of text documents, where the traditional 'line by line' diffing approach is not desirable. Therefore it generates diffs on the basis of 'sentence parts'.
 
-It was developed in response to the large number of diff algorithms available in the public domain under highly resrtrictive GPL type licenses.  This code uses the permissive MIT license, which allows just about any use under the sun, hence Python **FREE** diff library became PyFreeDiff.
+It is available as truly free and open source software under the permissive MIT license. There are no requirements for using the code in your own project, however if you do use this library, it would be really nice to know about it!
 
-If you do use this library, it would be really nice to know about it, and also if you find any issues or make any improvements that you felt like  contributing back that would be great!
+Currently PyTextDiff is in active development and hence not suitable for a production environment as some function names and behaviour is likely to change.
 
 
 Features
@@ -21,14 +21,12 @@ Roadmap
 =========
 
 Currently in development:
- - Word level diff
  - Three way merge
- - Generation of unified diff/patch format diffs
 
 Usage
 =====
 
-Download (or checkout) the `PyFreeDiff.py` file and place it in a directory such as `lib`.
+Clone the repository to your local computer. 
 
 A simple example usage may be as follows
 
