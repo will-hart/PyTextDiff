@@ -72,9 +72,29 @@ class DiffResult():
         self.line = line
         self.operation = operation
     
+    def lines_touched():
+        return set(range(self.start_index, self.start_index + self.length))
+    
+    def contains(self, other_result):
+        return self.lines_touched().isdisjoint(other_result.lines_touched())
+        
+    def get_contained_indices(self, other_result):
+        return self.lines_touched().intersection(other_result.lines_touched())
+    
+    def split(self, index):
+        # split the DiffResult at the given index, returning the two halves
+        # assumes default diffing behaviour was used
+        splits = self._split_with_maintain(line)
+        
+        a_splits = splits[:index-self.start_index]
+        b_splits = splits[index-self.start_index:]
+        
+        return DiffResult(self.start_index, index, ''.join(a_splits), self.operation), \
+                DiffResult(self.start_index + index, self.length-index, ''.join(b_splits), self.operation)
+    
     def __str__(self):
         return str(self.operation) + "{number:03}".format(number=self.start_index) + \
-        "@" + "{number:03}".format(self.start_index + self.length) + ":" + self.line
+        "@" + "{number:03}".format(number=self.length) + ":" + ''.join(self.line)
 
 
 '''
@@ -95,13 +115,13 @@ class DiffEngine(object):
         
         # build a list of sentences for each input string
         original_text = self._split_with_maintain(original)
-        new_text = self._split_with_maintain(revised)
+        revised_text = self._split_with_maintain(revised)
         
         # diff the result
-        raw_diffs = '\n'.join(difflib.ndiff(original_text, new_text))
+        raw_diffs = self._generate_diff(original_text, revised_text, 0) #'\n'.join(difflib.ndiff(original_text, new_text))
         
         # pack the raw_diffs into a string format and return the results
-        return self._pack_results(raw_diffs)
+        return '\n'.join([d.__str__() for d in raw_diffs])#self._pack_results(raw_diffs)
 
     
     '''
@@ -110,32 +130,16 @@ class DiffEngine(object):
     to modify the same text
     '''
     def diff3(self, mine, original, theirs):
-        results = {}
+        results = []
         
-        my_diffs = self._unpack_results(self.diff(original, mine))
-        their_diffs = self._unpack_results(self.diff(original, theirs))
+        # get a combined diff object representing the sorted diffs from both parties
+        both_diffs = self._unpack_results(self.diff(original, mine))
+        both_diffs += self._unpack_results(self.diff(original, theirs))
+        sorted(both_diffs, key=attrgetter('start_index'))
         
-        # find the collisions between the two diffs using python sets
-        my_lines = set(self._flatten([range(d.start,d.start+d.length) for d in my_diffs]))
-        their_lines = set(self._flatten([range(d.start,d.start+d.length) for d in their_diffs]))
-        collisions = my_lines.intersection(their_lines).sort()
-
-        # now go through and merge the diffs, flagging collisions separately
-        index = 0
-        my_idx = 0
-        their_idx = 0
-        conflict = 0
-        while my_idx < len(my_diffs) or their_idx < len(their_diffs):
-
-            # process the next diff
-            if my_diffs[my_idx].start_index < their_diffs[their_idx].start_index:
-                diff_to_process = my_diffs[my_idx]
-                my_idx += 1
-            else:
-                diff_to_process = their_diffs[their_idx]
-                their_idx += 1
+        # now go through and merge the diffs
         
-            
+        
         pass
 
         
@@ -162,10 +166,18 @@ class DiffEngine(object):
             else:
                 start = ""
                 end = ""
-            result += start + diff.line + end + "\n"
+            result += start + ''.join(diff.line) + end + "\n"
             
         return result
     
+    ''''
+    Generates an html output of patched document, with insertions
+    and deletions surrounded by <ins> and <del> tags.
+    '''
+    def patch_to_html(self, doc, patch):
+        pass
+        
+        
     '''
     Apply a set of diffs to an original file to produce a new text file.
     You can either pass a string or a pre-split list of items
@@ -232,7 +244,12 @@ class DiffEngine(object):
     Becomes:
         ["This is a test", ".", "  ", "It should split awesomely", "."]
     '''
-    def _split_with_maintain(self, value, treat_trailing_spaces_as_sentence = True, split_char_regex = STANDARD_REGEX):
+    def _split_with_maintain(self,
+        value,
+        treat_trailing_spaces_as_sentence = True,
+        split_char_regex = STANDARD_REGEX):
+        
+        
         result = []
         check = value.replace('\n',NEWLINE_MASK) # mask out new line values
         
@@ -247,8 +264,8 @@ class DiffEngine(object):
                 break
             
             idx = found.start()
-            result.append(str(check[:idx]))         # append the string
-            result.append(str(check[idx:idx+1]))    # append the puncutation so changing ? to . doesn't invalidate the whole sentence
+            result.append(str(check[:idx]))         
+            result.append(str(check[idx:idx+1]))    
             check = check[idx + 1:]
             
             # group the trailing spaces if requested
@@ -286,6 +303,9 @@ class DiffEngine(object):
         current = ''
         
         for raw in raw_list:
+            if len(raw) == 0:
+                continue
+                
             if raw[0] != prev_op:
                 start = count
                 if length > 0:
@@ -293,21 +313,21 @@ class DiffEngine(object):
                                 "{number:03}".format(number=length) + ":" + current + "\n"
                     current = ''
                     length = 0
-            
+                
             # save the operation
             prev_op = raw[0]
-        
+            
             # increment counters
             if prev_op != "+":
                 count += 1
             if prev_op != " ":
                 current += raw[2:]
                 length += 1
-            
+                
         if length > 0:
             results += prev_op + "{number:03}".format(number=start) + "@" +\
                         "{number:03}".format(number=length) + ":" + current
-        
+            
         return results
         
     '''
@@ -320,7 +340,7 @@ class DiffEngine(object):
     def _unpack_results(self, raw_string):
         raw_list = raw_string.split('\n')
         results = []
-    
+        
         for raw in raw_list:
             #check validity 
             if raw[4] != '@' or raw[8] != ':':
@@ -329,14 +349,14 @@ class DiffEngine(object):
             # grab values
             start_idx = int(raw[1:4])
             length = int(raw[5:8])
-            text = raw[9:]
+            lines = self._split_with_maintain(raw[9:])
             operation = raw[0]
             
-            results.append(DiffResult(start_idx, length, text, operation))
-        
+            results.append(DiffResult(start_idx, length, lines, operation))
+            
         return results
-
-
+        
+        
     '''
     Flatten an irregular list of ints
      --> http://stackoverflow.com/questions/2158395
@@ -348,3 +368,73 @@ class DiffEngine(object):
                     yield sub
             else:
                 yield el
+        
+    '''
+    Generate a 'dumb' diff between two strings.
+    '''
+    def _generate_diff(self, original, revised, start_idx):
+        print start_idx
+        # check if we have empty lists - means we are at the bottom of recursion
+        if len(original) == 0 and len(revised) == 0:
+            return None
+            
+        # check if the strings are the same
+        if ",".join( map( str, original ) ) == ",".join( map( str, revised ) ):
+            return None #[DiffResult(start_idx, len(revised), revised, UNCHANGED)]
+            
+        # speed up - check for original being empty (complete insertion)
+        if len(original) == 0:
+            return [DiffResult(start_idx, len(revised), revised, INSERTED)]
+            
+        # speed up - check for revised being empty (complete deletion)
+        if len(revised) == 0:
+            return [DiffResult(start_idx, len(original), original, DELETED)]
+            
+        # set up some variables
+        result = []
+        matrix = [[0 for x in range(len(revised))] for x in range(len(original))] 
+        old_max = 0
+        new_max = 0
+        max_len = 0
+        
+        # build up the 2d list showing longest common sequence
+        for old_idx, old_val in enumerate(original):
+            for new_idx, new_val in enumerate(revised):
+                if new_val == old_val:
+                    # check previous indices and see if they matched
+                    if old_idx > 0 and new_idx > 0:
+                        matrix[old_idx][new_idx] = matrix[old_idx-1][new_idx-1] + 1
+                    else:
+                        matrix[old_idx][new_idx] = 1
+                        
+                    if matrix[old_idx][new_idx] > max_len:
+                        max_len = matrix[old_idx][new_idx]
+                        old_max = old_idx + 1 - max_len
+                        new_max = new_idx + 1 - max_len
+        
+        if max_len == 0:
+            print "no match"
+            print ','.join(original) + " @@" + str(len(original))
+            print ','.join(revised) + " @@" + str(len(revised))
+            result.append(DiffResult(start_idx, len(original), original, DELETED))
+            result.append(DiffResult(start_idx, len(revised), revised, INSERTED))
+            return result
+            
+        # generate diffs that are 'left' of the longest common sequence on the table
+        others = self._generate_diff(original[0:old_max], revised[0:new_max], start_idx)
+        if others is not None:
+            result += others
+        
+        # ignore central diffs (i.e. ignore common longest sequence)
+        #o = DiffResult(start_idx + new_max, max_len, revised[new_max : new_max + max_len], UNCHANGED)  
+        #result.append(o)
+        
+        # generate diffs to the right of the longest common sequence
+        others = self._generate_diff(
+            original[old_max + max_len :],
+            revised[new_max + max_len :],
+            old_max + max_len + start_idx)
+        if others is not None:
+            result += others
+    
+        return result

@@ -80,9 +80,9 @@ class TestDiffUtilities(unittest.TestCase):
 		self.assertEquals(result[0].operation, "+")
 		self.assertEquals(result[1].operation, "-")
 		self.assertEquals(result[2].operation, "+")
-		self.assertEquals(result[0].line, "insert")
-		self.assertEquals(result[1].line, "remove")
-		self.assertEquals(result[2].line, "insert2")
+		self.assertEquals(result[0].line, ["insert"])
+		self.assertEquals(result[1].line, ["remove"])
+		self.assertEquals(result[2].line, ["insert2"])
 		
 		
 	def test_flattening_of_list(self):
@@ -116,17 +116,34 @@ class TestDiffResults(unittest.TestCase):
 	def test_basic_diffs_to_string(self):
 		original = "skip. remove. "
 		revised = "insert. skip. insert2!"
-		expected_result = "+000@003:insert. \n+003@002:insert2!\n-003@003:remove. "
+		expected_result = "+000@003:insert. \n-003@003:remove. \n+003@002:insert2!"
 		
 		result = self.engine.diff(original,revised)
 		self.assertEquals(result, expected_result)
-	
-	# TODO: Diff Tests
+		
+	def test_complex_diffs_to_string(self):
+		original = \
+"""This is a complex diff.  It contains newlines
 
+exclamation marks! changes in spaces (like here). and some other. weird?! formatting.
+
+We need to check it parses properly"""
+		
+		revised = \
+"""This is a complex diff!  It has newlines, exclamation marks!
+
+changes in spaces (like here). and some other formatting.
+
+We need to check it parses properly"""
+		
+		expected_output = ""
+	
+		output = self.engine.diff(original, revised)
+		self.assertEquals(output, expected_output)
 	
 	
 	# TODO: Diff3 Tests
-	# TODO: Patch Tests
+	# TODO: Patch Tests, including patch_to_html, maintenance of newlines during diff/patch
 	
 	
 if __name__ == '__main__':
