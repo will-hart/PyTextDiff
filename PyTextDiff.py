@@ -28,8 +28,9 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTI
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 '''
 
-import re
+import collections
 import difflib
+import re
 
 '''
 Constants for determining the status of a diff_result
@@ -284,12 +285,12 @@ class DiffEngine(object):
         current_str = ''
         
         for r in raw_list:
-            if r[0] == last_op:
+            if r[0] == last_op or last_op_idx == -1:
                 current_str += r[2:]
             else:
                 if last_op != ' ': # ignore no change lines to compress results
-                    results.append(last_op + str(last_op_idx).format("\3d") + "@" + \
-                            str(index-last_op_idx).format("\3d") + ":" + current_str)
+                    results.append(last_op + "{number:03}".format(number=last_op_idx) + "@" + \
+                            "{number:03}".format(number=index-last_op_idx) + ":" + current_str)
                     current_str = r[2:]
                 else: 
                     current_str = None
@@ -330,10 +331,10 @@ class DiffEngine(object):
     Flatten an irregular list of ints
      --> http://stackoverflow.com/questions/2158395
     '''
-    def _flatten(l):
+    def _flatten(self, l):
         for el in l:
             if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
-                for sub in flatten(el):
+                for sub in self._flatten(el):
                     yield sub
             else:
                 yield el

@@ -29,17 +29,25 @@ class TestDiffGeneration(unittest.TestCase):
 
 	def setUp(self):
 		self.engine = PyTextDiff.DiffEngine()
-		
-		self.easy_split_text = """This. Is an easy. splitting? function! it should return
-		at least 14 sections when split."""
-		
+
 	
-	def test_split_of_text(self):
-		result = self.engine._split_with_maintain(self.easy_split_text)
+	def test_splitting_of_text(self):
+		easy_split_text = """This. Is an easy. splitting? function! it should return
+			at least 14 sections when split."""
+	
+		result = self.engine._split_with_maintain(easy_split_text)
 		self.assertEqual(len(result), 14)		# correct number of splits
 		self.assertEqual(result[0], "This")		# correct first split
 		self.assertEqual(result[2], " ")		# correct space split
 		self.assertEqual(result[13], ".")		# correct last split
+		
+	def test_flattening_of_list(self):
+		input_list = [[1,2],[3],[4,5,6,7],[8,[9,10]]]
+		expected_output = [1,2,3,4,5,6,7,8,9,10]
+		
+		output = list(self.engine._flatten(input_list))
+		self.assertEquals(output, expected_output)
+
 
 if __name__ == '__main__':
 	unittest.main()	
