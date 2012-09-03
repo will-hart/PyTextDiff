@@ -117,7 +117,7 @@ class TestDiffResults(unittest.TestCase):
 		original = "skip. remove. "
 		revised = "insert. skip. insert2!"
 		expected_result = "+000@003:insert. \n-003@003:remove. \n+003@002:insert2!"
-		
+		 
 		result = self.engine.diff(original,revised)
 		self.assertEquals(result, expected_result)
 		
@@ -130,13 +130,13 @@ exclamation marks! changes in spaces (like here). and some other. weird?! format
 We need to check it parses properly"""
 		
 		revised = \
-"""This is a complex diff!  It has newlines, exclamation marks!
-
-changes in spaces (like here). and some other formatting.
+"""This is a complex diff!  It has newlines, exclamation marks! changes in spaces (like here). and some other formatting.
 
 We need to check it parses properly"""
 		
-		expected_output = ""
+		expected_output = "-001@001:.\n+001@001:!\n-003@001:It contains newlines~~#%#~~#%#exclamation marks!\n" + \
+						"+003@001:It has newlines, exclamation marks\n-009@008:and some other. weird?! formatting\n"+\
+						"-009@001:and some other formatting"
 	
 		output = self.engine.diff(original, revised)
 		self.assertEquals(output, expected_output)
