@@ -1,5 +1,10 @@
 '''
 Some basic speed tests for PyFreeDiff
+Run by typing 
+
+   $ python PyTextDiffTests 
+  
+into your console
 
 The MIT License (MIT)
 Copyright (c) 2012, William Hart
@@ -192,7 +197,7 @@ We need to check it parses properly"""
     
     def test_basic_noconflict_diff3_to_string(self):
         output = self.engine.diff3("a.b.c.d","a.b.e.c.d","a.c.h.d")
-        self.assertEqual(output,"")
+        self.assertEqual(output,"") # TODO set up actual expected diff
     
     
     # TODO: Patch Tests, including patch_to_html, maintenance of newlines during diff/patch

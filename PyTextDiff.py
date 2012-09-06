@@ -82,14 +82,30 @@ class DiffResult():
         return self.lines_touched().intersection(other_result.lines_touched())
     
     def split(self, index):
+        
+        if index > self.length:
+            return self, None
+    
+        if index <= 0:
+            return None, self
+    
         # split the DiffResult at the given index - the index is
         # in terms of the document index (e.g. if the diff starts at index
         # 9 and we want to split at the second part, then the index given would be 11)
         a_splits = self.line[:index-self.start_index]
         b_splits = self.line[index-self.start_index:]
+
+        if a_splits == []:
+            first_part = None
+        else:
+            first_part = DiffResult(self.start_index, index, a_splits, self.operation)
         
-        return DiffResult(self.start_index, index, ''.join(a_splits), self.operation), \
-                DiffResult(self.start_index + index, self.length-index, ''.join(b_splits), self.operation)
+        if b_splits == []:
+            second_part = None
+        else:
+            second_part = DiffResult(self.start_index + index, self.length-index, b_splits, self.operation)
+        
+        return first_part, second_part
     
     def __str__(self):
         return str(self.operation) + "{number:03}".format(number=self.start_index) + \
@@ -140,15 +156,21 @@ class DiffEngine(object):
         
         # now go through and merge the diffs
         i = 0
-        while i < len(both_diffs)-1:    #minus one because we don't
-                                        #want to parse the last item
+        count = len(both_diffs)
+        while i < count - 1:    #minus one because we don't
+                                          #want to parse the last item
             current_diff = both_diffs[i][1]
             next_diff = both_diffs[i+1][1]
             
             if current_diff.contains(next_diff):
                 # handle the conflict - first split off the non-conflicting part
                 first_part, second_part = current_diff.split(next_diff.start_index)
-                results.append(first_part)
+                if first_part != None:
+                    results.append(second_part)
+                
+                if second_part == None:
+                    i+=2 # skip the next operation
+                    continue
                 
                 # work out if the second part or the next diff is longer
                 if second_part.length < next_diff.length:
@@ -161,10 +183,13 @@ class DiffEngine(object):
                     remainder = [both_diffs[i][0], remainder]
                     
                 # add the diffs
-                conflict_a.operation = CONFLICT_MINE
-                conflict_b.operation = CONFLICT_THEIRS
-                results.append(conflict_a)
-                results.append(conflict_b)
+                if conflict_a != []:
+                    conflict_a.operation = CONFLICT_MINE
+                    results.append(conflict_a)
+                    
+                if conflict_b != []:
+                    conflict_b.operation = CONFLICT_THEIRS
+                    results.append(conflict_b)
                 
                 # set the next diff to the remainder
                 both_diffs[i+1] = remainder
@@ -175,8 +200,8 @@ class DiffEngine(object):
             
             
             i+=1
+            count = len(both_diffs)
             
-        
         pass
 
         
@@ -400,7 +425,7 @@ class DiffEngine(object):
     '''
     def _flatten(self, l):
         for el in l:
-            if isinstance(el, collections.Iterable) and not isinstance(el, basestring):
+            if isinstance(el, collections.Iterable) and not isinstance(el, str):
                 for sub in self._flatten(el):
                     yield sub
             else:
