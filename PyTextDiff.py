@@ -165,13 +165,14 @@ class DiffEngine(object):
             if current_diff.contains(next_diff):
                 # handle the conflict - first split off the non-conflicting part
                 first_part, second_part = current_diff.split(next_diff.start_index)
+
+                # first we check if we are splitting at the start of the current diff
                 if first_part != None:
+                    second_part.operation = CONFLICT_MINE
                     results.append(second_part)
                 
-                if second_part == None:
-                    i+=2 # skip the next operation
-                    continue
-                
+                # TODO ==> LOGIC 
+
                 # work out if the second part or the next diff is longer
                 if second_part.length < next_diff.length:
                     conflict_a = second_part.length
