@@ -1,6 +1,8 @@
 PyFreeDiff
 ==========
 
+[![Build Status](http://176.58.119.7:8080/job/PyTextDiff/badge/icon)](http://176.58.119.7:8080/job/PyTextDiff/)
+
 The ability to keep various versions of documents and view changes between versions is something that is widely adopted in the programming community and there are numerous free or paid solutions available. The requirements for version control of text documents is similar, yet subtly different.  In many instances an entire paragraph may be on a single line, and hence most programming version control systems would 'diff' an entire paragraph even if only a word was changed.  Generating diffs by words can be messy and where multiple editors are working on a single piece of text may lead to sentences that don't make read correctly if two users modify the same sentence in different ways.
 
 PyTextDiff attempts to solve this riddle by generating diffs by 'sentence part,' that is either whole sentences or through key puncutation.  For instance if we took a sentence:
