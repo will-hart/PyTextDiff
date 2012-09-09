@@ -1,4 +1,4 @@
-PyFreeDiff
+PyTextDiff
 ==========
 
 [![Build Status](http://176.58.119.7:8080/job/PyTextDiff/badge/icon)](http://176.58.119.7:8080/job/PyTextDiff/)
