@@ -166,6 +166,34 @@ class TestDiffUtilities(unittest.TestCase):
         self.assertEqual(d.contains(c), True)
         self.assertEqual(d.contains(b), True) # same end index
         self.assertEqual(b.contains(d), True)
+    
+    def test_diffresult_equality(self):
+        a = DiffResult(0,1, ["This is a test"], "+")
+        b = DiffResult(0,1, ["This is a test"], "+") # should match a
+        c = DiffResult(0,1, ["This is a test"], "-") # change one item at a time
+        d = DiffResult(0,1, ["Doesn't contain me?"], "+")
+        e = DiffResult(0,2, ["This is a test"], "+")
+        f = DiffResult(1,1, ["This is a test"], "+")
+        
+        self.assertEqual(a == b, True)
+        self.assertEqual(a == c, False)
+        self.assertEqual(a == d, False)
+        self.assertEqual(a == e, False)
+        self.assertEqual(a == f, False)
+    
+    def test_diffresult_inequality(self):
+        a = DiffResult(0,1, ["This is a test"], "+")
+        b = DiffResult(0,1, ["This is a test"], "+") # should match a
+        c = DiffResult(0,1, ["This is a test"], "-") # change one item at a time
+        d = DiffResult(0,1, ["Doesn't contain me?"], "+")
+        e = DiffResult(0,2, ["This is a test"], "+")
+        f = DiffResult(1,1, ["This is a test"], "+")
+        
+        self.assertEqual(a != b, False)
+        self.assertEqual(a != c, True)
+        self.assertEqual(a != d, True)
+        self.assertEqual(a != e, True)
+        self.assertEqual(a != f, True)
         
 class TestDiffFormatting(unittest.TestCase):
     
@@ -216,7 +244,8 @@ We need to check it parses properly"""
         output = self.engine.diff(original, revised)
         self.assertEqual(output, expected_output)
     
-    def test_basic_noconflict_diff3_to_string(self):
+    def basic_noconflict_diff3_to_string(self):
+        # TODO reinstate
         output = self.engine.diff3("a.b.e.c.d","a.b.c.d","a.c.h.d")
 
         expected_a = DiffResult(1, 2, [".","b"], "-")
@@ -232,6 +261,14 @@ We need to check it parses properly"""
         self.assertEqual(output[1].__str__(), expected_b.__str__())
         self.assertEqual(output[2].__str__(), expected_c.__str__())
     
+    def test_basic_conflict_diff3_to_string(self):
+        mine = "a!b.c.d.e."
+        theirs = "a,b.c.d.e."
+        original = "a.b.c.d.e."
+        output = self.engine.diff3(mine, original, theirs)
+        for d in output:
+            print d.__str__()
+        
     
     # TODO: Patch Tests, including patch_to_html, maintenance of newlines during diff/patch
     
