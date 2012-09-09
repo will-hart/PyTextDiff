@@ -113,7 +113,7 @@ class TestDiffUtilities(unittest.TestCase):
         
     def test_splitting_of_diffs_non_zero_start_index(self):
         d = DiffResult(5, 5, ['a','b','c','d','e'], "+")
-        a,b = d.split(2)
+        a,b = d.split(7)
         
         self.assertEqual(a.start_index, 5)
         self.assertEqual(b.start_index, 7)

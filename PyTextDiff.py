@@ -83,10 +83,11 @@ class DiffResult():
     
     def split(self, index):
         
-        if index > self.length:
+        # check if we are exceeding the bounds of the diff
+        if index > self.start_index + self.length:
             return self, None
     
-        if index <= 0:
+        if index <= self.start_index:
             return None, self
     
         # split the DiffResult at the given index - the index is
@@ -98,12 +99,12 @@ class DiffResult():
         if a_splits == []:
             first_part = None
         else:
-            first_part = DiffResult(self.start_index, index, a_splits, self.operation)
+            first_part = DiffResult(self.start_index, index - self.start_index, a_splits, self.operation)
         
         if b_splits == []:
             second_part = None
         else:
-            second_part = DiffResult(self.start_index + index, self.length-index, b_splits, self.operation)
+            second_part = DiffResult(index, self.start_index + self.length - index, b_splits, self.operation)
         
         return first_part, second_part
     
@@ -179,6 +180,7 @@ class DiffEngine(object):
             if current_diff.contains(next_diff):
                 print " >> conflict! a: " + str(current_diff.start_index) + "@" + str(current_diff.length)
                 print "              b: " + str(next_diff.start_index) + "@" + str(next_diff.length)
+                
                 # there is an overlap, split out the non-overlapping part
                 first_current, second_current = \
                     current_diff.split(next_diff.start_index)
