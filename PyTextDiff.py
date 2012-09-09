@@ -200,6 +200,7 @@ class DiffEngine(object):
                 # check if they start at the same place
                 if first_current == None:
                     print " >>>>>> diffs start at the same place"
+                    
                     # they start at the same place, one or the other will be longer
                     # wholly add the shorter one and split and add the first half of
                     # the second one.  The remainder becomes the next diff
@@ -213,8 +214,15 @@ class DiffEngine(object):
                         their_diff = second_current
                         
                     # process the diffs
-                    my_diff.operation = CONFLICT_MINE
-                    their_diff.operation = CONFLICT_THEIRS
+                    if my_diff == their_diff:
+                        print " >>>>>>>> Diffs are the same, do not process"
+                        results.append(my_diff)
+                    else:
+                        my_diff.operation = CONFLICT_MINE
+                        their_diff.operation = CONFLICT_THEIRS
+                        results.append(my_diff)
+                        results.append(their_diff)
+                        
                     both_diffs[i+1] = [both_diffs[i+1][0], remainder]
                     
                     # examine the next diff
@@ -229,7 +237,7 @@ class DiffEngine(object):
                     results.append(first_current)
                     
                     
-                    both_diffs[i] = second_current
+                    both_diffs[i] = [both_diffs[i][0], second_current]
             else:
                 print " >>>> No overlap, adding first diff only"
                 # no overlap - add the diff and then move on to the next diff
