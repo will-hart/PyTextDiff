@@ -76,7 +76,7 @@ class DiffResult():
         return set(range(self.start_index, self.start_index + self.length))
     
     def contains(self, other_result):
-        return self.lines_touched().isdisjoint(other_result.lines_touched())
+        return not self.lines_touched().isdisjoint(other_result.lines_touched())
         
     def get_contained_indices(self, other_result):
         return self.lines_touched().intersection(other_result.lines_touched())
@@ -154,56 +154,76 @@ class DiffEngine(object):
         both_diffs += [['theirs',d] for d in self._unpack_results(self.diff(original, theirs))]
         sorted(both_diffs, key=lambda obj: obj[1].start_index)
         
+        print " "
+        print "#################################"
+        print " running diff3 with " + str(len(both_diffs)) + " diffs"
+        print "#################################"
+        print " "
+        print " GENERATED DIFFS:"
+        
+        for d in both_diffs:
+            print d[1]
+
+        print "__________________________________"
+        
         # now go through and merge the diffs
         i = 0
         count = len(both_diffs)
         while i < count - 1:    #minus one because we don't
-                                          #want to parse the last item
+                                #want to parse the last item
+            print " > currently on index " + str(i)
             current_diff = both_diffs[i][1]
             next_diff = both_diffs[i+1][1]
             
+            # see if the diffs overlap
             if current_diff.contains(next_diff):
-                # handle the conflict - first split off the non-conflicting part
-                first_part, second_part = current_diff.split(next_diff.start_index)
-
-                # first we check if we are splitting at the start of the current diff
-                if first_part != None:
-                    second_part.operation = CONFLICT_MINE
-                    results.append(second_part)
+                print " >> conflict! a: " + str(current_diff.start_index) + "@" + str(current_diff.length)
+                print "              b: " + str(next_diff.start_index) + "@" + str(next_diff.length)
+                # there is an overlap, split out the non-overlapping part
+                first_current, second_current = \
+                    current_diff.split(next_diff.start_index)
+                print " >>> " + str(first_current == None) + ", " + str(second_current == None)
                 
-                # TODO ==> LOGIC 
-
-                # work out if the second part or the next diff is longer
-                if second_part.length < next_diff.length:
-                    conflict_a = second_part.length
-                    conflict_b, remainder = next_diff.split(second_part.start_index + second_part.length)
-                    remainder = [both_diffs[i+1][0], remainder]
+                # check if they start at the same place
+                if first_current == None:
+                    print " >>> diffs start at the same place"
+                    # they start at the same place, one or the other will be longer
+                    # wholly add the shorter one and split and add the first half of
+                    # the second one.  The remainder becomes the next diff
+                    if second_current.length > next_diff.length:
+                        print " >>>> second diff longer"
+                        my_diff, remainder = second_current.split(next_diff.length + next_diff.start_index)
+                        their_diff = next_diff
+                    else:
+                        print " >>>> next_diff longer"
+                        my_diff, remainder = next_diff.split(second_current.length + second_current.start_index)
+                        their_diff = second_current
+                        
+                    # process the diffs
+                    my_diff.operation = CONFLICT_MINE
+                    their_diff.operation = CONFLICT_THEIRS
+                    both_diffs[i+1] = remainder
+                    
+                    # examine the next diff
+                    i += 1
+                    
                 else:
-                    conflict_a, remainder = second_part.split(next_diff.start_index + next_diff.length)
-                    conflict_b = next_diff
-                    remainder = [both_diffs[i][0], remainder]
+                    print " >>> diffs start at different place, adding first to results"
+                    # they don't start at the same place, just add first
+                    # and then loop again
+                    print " >>>> diff lengths: " + str(first_current.length) + " , " + str(second_current.length)
+                    results.append(first_current)
                     
-                # add the diffs
-                if conflict_a != []:
-                    conflict_a.operation = CONFLICT_MINE
-                    results.append(conflict_a)
                     
-                if conflict_b != []:
-                    conflict_b.operation = CONFLICT_THEIRS
-                    results.append(conflict_b)
-                
-                # set the next diff to the remainder
-                both_diffs[i+1] = remainder
-                
+                    both_diffs[i] = second_current
             else:
-                # just add the diff
-                results.append(both_diffs[i][1])
+                print " >> No overlap, adding first diff only"
+                # no overlap - add the diff and then move on to the next diff
+                results.append(current_diff)
+                i += 1
             
-            
-            i+=1
-            count = len(both_diffs)
-            
-        pass
+            print " # results are " + str(len(results)) + " items long"
+        return results
 
         
     '''
