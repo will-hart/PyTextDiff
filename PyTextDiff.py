@@ -113,6 +113,9 @@ class DiffResult():
         "@" + "{number:03}".format(number=self.length) + ":" + ''.join(self.line)
         
     def __eq__(self, other):
+        if other == None:
+            return False
+            
         return other.start_index == self.start_index and \
             other.length == self.length and \
             other.operation == self.operation and \
@@ -161,7 +164,7 @@ class DiffEngine(object):
         both_diffs = [['mine',d] for d in self._unpack_results(self.diff(original, mine))]
         both_diffs += [['theirs',d] for d in self._unpack_results(self.diff(original, theirs))]
         both_diffs = sorted(both_diffs, key=lambda obj: obj[1].start_index)
-        
+            
         print " "
         print "#################################"
         print " running diff3 with " + str(len(both_diffs)) + " diffs"
@@ -171,9 +174,9 @@ class DiffEngine(object):
         
         for d in both_diffs:
             print d[1]
-
+            
         print "__________________________________"
-        
+            
         # now go through and merge the diffs
         i = 0
         count = len(both_diffs)
@@ -192,7 +195,6 @@ class DiffEngine(object):
                 first_current, second_current = \
                     current_diff.split(next_diff.start_index)
                 print " >>>>>> |" + first_current.__str__() + "|" + second_current.__str__() + "|"
-                print " >>>>>> |" + ''.join(first_current.line) + "|"  + ''.join(second_current.line) + "|"
                 print " >>>>>> |" + str(first_current == None) + ", " + str(second_current == None)
                 
                 # check if they start at the same place
@@ -213,12 +215,13 @@ class DiffEngine(object):
                     # process the diffs
                     my_diff.operation = CONFLICT_MINE
                     their_diff.operation = CONFLICT_THEIRS
-                    both_diffs[i+1] = remainder
+                    both_diffs[i+1] = [both_diffs[i+1][0], remainder]
                     
                     # examine the next diff
                     i += 1
                     
                 else:
+                    print " >>>>>> |" + ''.join(first_current.line) + "|"  + ''.join(second_current.line) + "|"
                     print " >>>>>> diffs start at different place, adding first to results"
                     # they don't start at the same place, just add first
                     # and then loop again
