@@ -111,8 +111,15 @@ class DiffResult():
     def __str__(self):
         return str(self.operation) + "{number:03}".format(number=self.start_index) + \
         "@" + "{number:03}".format(number=self.length) + ":" + ''.join(self.line)
+        
+    def __eq__(self, other):
+        return other.start_index == self.start_index and \
+            other.length == self.length and \
+            other.operation == self.operation and \
+            other.line == self.line
 
-
+    def __ne__(self, other):
+        return not self.__eq__(other)
 '''
 A class for performing diff and patch operations on strings.  Operations
 such as diff and diff3 return a string formatted for saving in a database 
@@ -153,7 +160,7 @@ class DiffEngine(object):
         # owns the diff ('mine' or 'theirs')
         both_diffs = [['mine',d] for d in self._unpack_results(self.diff(original, mine))]
         both_diffs += [['theirs',d] for d in self._unpack_results(self.diff(original, theirs))]
-        sorted(both_diffs, key=lambda obj: obj[1].start_index)
+        both_diffs = sorted(both_diffs, key=lambda obj: obj[1].start_index)
         
         print " "
         print "#################################"
@@ -172,32 +179,34 @@ class DiffEngine(object):
         count = len(both_diffs)
         while i < count - 1:    #minus one because we don't
                                 #want to parse the last item
-            print " > currently on index " + str(i)
+            print " >> currently on index " + str(i)
             current_diff = both_diffs[i][1]
             next_diff = both_diffs[i+1][1]
             
             # see if the diffs overlap
             if current_diff.contains(next_diff):
-                print " >> conflict! a: " + str(current_diff.start_index) + "@" + str(current_diff.length)
-                print "              b: " + str(next_diff.start_index) + "@" + str(next_diff.length)
+                print " >>>> conflict! a: " + str(current_diff.start_index) + "@" + str(current_diff.length) + ": " + current_diff.__str__()
+                print "                b: " + str(next_diff.start_index) + "@" + str(next_diff.length) + ": " + next_diff.__str__()
                 
                 # there is an overlap, split out the non-overlapping part
                 first_current, second_current = \
                     current_diff.split(next_diff.start_index)
-                print " >>> " + str(first_current == None) + ", " + str(second_current == None)
+                print " >>>>>> |" + first_current.__str__() + "|" + second_current.__str__() + "|"
+                print " >>>>>> |" + ''.join(first_current.line) + "|"  + ''.join(second_current.line) + "|"
+                print " >>>>>> |" + str(first_current == None) + ", " + str(second_current == None)
                 
                 # check if they start at the same place
                 if first_current == None:
-                    print " >>> diffs start at the same place"
+                    print " >>>>>> diffs start at the same place"
                     # they start at the same place, one or the other will be longer
                     # wholly add the shorter one and split and add the first half of
                     # the second one.  The remainder becomes the next diff
                     if second_current.length > next_diff.length:
-                        print " >>>> second diff longer"
+                        print " >>>>>>>> second diff longer"
                         my_diff, remainder = second_current.split(next_diff.length + next_diff.start_index)
                         their_diff = next_diff
                     else:
-                        print " >>>> next_diff longer"
+                        print " >>>>>>>> next_diff longer"
                         my_diff, remainder = next_diff.split(second_current.length + second_current.start_index)
                         their_diff = second_current
                         
@@ -210,21 +219,23 @@ class DiffEngine(object):
                     i += 1
                     
                 else:
-                    print " >>> diffs start at different place, adding first to results"
+                    print " >>>>>> diffs start at different place, adding first to results"
                     # they don't start at the same place, just add first
                     # and then loop again
-                    print " >>>> diff lengths: " + str(first_current.length) + " , " + str(second_current.length)
+                    print " >>>>>>>> diff lengths: " + str(first_current.length) + " , " + str(second_current.length)
                     results.append(first_current)
                     
                     
                     both_diffs[i] = second_current
             else:
-                print " >> No overlap, adding first diff only"
+                print " >>>> No overlap, adding first diff only"
                 # no overlap - add the diff and then move on to the next diff
                 results.append(current_diff)
                 i += 1
             
             print " # results are " + str(len(results)) + " items long"
+            
+        results.append(both_diffs[i][1])
         return results
 
         

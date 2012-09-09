@@ -217,8 +217,20 @@ We need to check it parses properly"""
         self.assertEqual(output, expected_output)
     
     def test_basic_noconflict_diff3_to_string(self):
-        output = self.engine.diff3("a.b.c.d","a.b.e.c.d","a.c.h.d")
-        self.assertEqual(output,"") # TODO set up actual expected diff
+        output = self.engine.diff3("a.b.e.c.d","a.b.c.d","a.c.h.d")
+
+        expected_a = DiffResult(1, 2, [".","b"], "-")
+        expected_b = DiffResult(4, 2, ["e","."], "+")
+        expected_c = DiffResult(6, 2, ["h","."], "+")
+        
+        for d in output:
+            print d.__str__()
+        
+        self.assertEqual(len(output),3)
+        
+        self.assertEqual(output[0].__str__(), expected_a.__str__())
+        self.assertEqual(output[1].__str__(), expected_b.__str__())
+        self.assertEqual(output[2].__str__(), expected_c.__str__())
     
     
     # TODO: Patch Tests, including patch_to_html, maintenance of newlines during diff/patch
